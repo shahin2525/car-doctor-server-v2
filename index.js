@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongodb from "mongodb";
 import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 // const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = mongodb;
 dotenv.config();
@@ -19,8 +20,8 @@ app.use(
   })
 );
 app.use(express.json());
-
-console.log(process.env.DB_PASS);
+app.use(cookieParser());
+// console.log(process.env.DB_PASS);
 
 // const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASSWORD}@cluster0.swu9d.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -34,6 +35,12 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const verifyToken = (req, res, next) => {
+  const cookieToken = req.cookies.token;
+  console.log("cookie token", cookieToken);
+  next();
+};
 
 async function run() {
   try {
@@ -86,8 +93,8 @@ async function run() {
       res.send(result);
     });
 
-    // bookings
-    app.get("/bookings", async (req, res) => {
+    // bookings related api
+    app.get("/bookings", verifyToken, async (req, res) => {
       // console.log(req.query.email);
       let query = {};
       if (req.query?.email) {
