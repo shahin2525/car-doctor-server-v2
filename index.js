@@ -48,7 +48,23 @@ async function run() {
       const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
-      res.send({ token: token });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log("logout user", user);
+      res
+        .clearCookie("token", {
+          maxAge: 0,
+        })
+        .send({ success: true });
     });
     // service related api
     app.get("/services", async (req, res) => {
@@ -72,7 +88,7 @@ async function run() {
 
     // bookings
     app.get("/bookings", async (req, res) => {
-      console.log(req.query.email);
+      // console.log(req.query.email);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
@@ -83,7 +99,7 @@ async function run() {
 
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
-      console.log(booking);
+      // console.log(booking);
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
     });
@@ -92,7 +108,7 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedBooking = req.body;
-      console.log(updatedBooking);
+      // console.log(updatedBooking);
       const updateDoc = {
         $set: {
           status: updatedBooking.status,
