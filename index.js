@@ -37,9 +37,18 @@ const client = new MongoClient(uri, {
 });
 
 const verifyToken = (req, res, next) => {
-  const cookieToken = req.cookies.token;
-  console.log("cookie token", cookieToken);
-  next();
+  const token = req?.cookies?.token;
+  // console.log("cookie token", cookieToken);
+  if (!token) {
+    return "unauthorize access";
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(401).send({ message: "unauthorize access" });
+    }
+    req.user = decoded;
+    next();
+  });
 };
 
 async function run() {
@@ -97,8 +106,14 @@ async function run() {
     app.get("/bookings", verifyToken, async (req, res) => {
       // console.log(req.query.email);
       let query = {};
+      // console.log("decoded info", req.user.email);
+      // console.log("query email info", req.query?.email);
+      if (req.query?.email !== req.user?.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       if (req.query?.email) {
         query = { email: req.query.email };
+        console.log(query);
       }
       const result = await bookingCollection.find(query).toArray();
       res.send(result);
